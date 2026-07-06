@@ -1,0 +1,14 @@
+# Windows junk
+Thumbs.db
+desktop.ini
+
+# stray logs/scratch from testing
+*.log
+*.bak
+
+# proxy DLL build byproducts (dinput8.dll itself is committed; these aren't needed)
+proxy/*.lib
+proxy/*.pdb
+
+# packaged release zips - regenerate with build/package.ps1
+dist/*.zip

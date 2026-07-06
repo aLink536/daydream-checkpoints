@@ -1,0 +1,5 @@
+name=Daydream Checkpoints
+id=DaydreamCheckpoints
+author=steve
+modversion=1.0.0
+description=Sleep sets a checkpoint, death rewinds the day. Waking from sleep saves the game and snapshots the save folder via a small companion watcher; dying offers one-click restore back to that morning. Singleplayer only. Requires the Daydream watcher to be running for checkpoints/restore (the mod is safe without it - it just can't snapshot).
