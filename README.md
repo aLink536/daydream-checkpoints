@@ -36,13 +36,18 @@ Singleplayer only.
 
 ## Install
 
-1. Extract this package into your Project Zomboid **install** folder
-   (the one with `ProjectZomboid64.exe`), e.g.
+1. Download `DaydreamCheckpoints_v1.0.0.zip` from the
+   [latest release](https://github.com/aLink536/daydream-checkpoints/releases/latest).
+2. Close Project Zomboid, then extract the zip into your Project Zomboid
+   **install** folder (the one with `ProjectZomboid64.exe`), e.g.
    `C:\Program Files (x86)\Steam\steamapps\common\ProjectZomboid\`.
    This places `dinput8.dll` next to the exe and the mod under `mods\`.
-2. Start Project Zomboid and enable **Daydream Checkpoints** in the Mods
+3. Start Project Zomboid and enable **Daydream Checkpoints** in the Mods
    menu (and in your save's mod list).
-3. Play. The checkpoint watcher starts automatically with the game.
+4. Play. The checkpoint watcher starts automatically with the game.
+
+> **Note:** the zip is the ready-to-play package. This repository is the
+> source; if you cloned it instead, see [Building from source](#building-from-source).
 
 ### Don't want the auto-start DLL?
 
@@ -50,6 +55,15 @@ The `dinput8.dll` only exists to launch the watcher for you. If you'd
 rather not use it, delete it and start the watcher yourself before playing
 by running `watcher\DaydreamWatcher.ps1` (or the included
 `Play PZ (Daydream).bat`).
+
+### Windows SmartScreen / antivirus note
+
+`dinput8.dll` is an unsigned DLL that starts a small PowerShell process
+(the watcher) when the game launches. Windows or antivirus may flag this.
+The full source is in [`proxy/dinput8.c`](proxy/dinput8.c) and
+[`watcher/DaydreamWatcher.ps1`](watcher/DaydreamWatcher.ps1) — you can read
+exactly what they do and [build the DLL yourself](#building-from-source) if
+you'd prefer not to trust the prebuilt one.
 
 ## How it works
 
