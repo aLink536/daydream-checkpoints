@@ -12,7 +12,11 @@
 
 local DEBUG = false                -- true = print progress to console.txt
 local SAVE_DELAY_MS = 4000         -- let the wake-up fade settle first
-local ACK_TIMEOUT_MS = 20000       -- give up waiting for the watcher
+-- Backup time scales with save size (robocopy of the whole save folder),
+-- not a fixed cost - a 14-day save already takes ~25s. This only affects
+-- how long a genuinely dead watcher takes to be reported; a working
+-- watcher's ack is picked up the instant it arrives, regardless of this.
+local ACK_TIMEOUT_MS = 60000       -- give up waiting for the watcher
 local RESTORE_ACK_TIMEOUT_MS = 240000 -- restore includes waiting for save unload
 local MENU_MARKER_EVERY_MS = 2000  -- heartbeat that tells the watcher "game is at the menu"
 local NIGHTMARE_DELAY_MS = 3500    -- pause after loading before the nightmare line

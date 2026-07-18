@@ -81,15 +81,26 @@ function Invoke-Backup($req) {
         throw "robocopy failed with exit code $LASTEXITCODE"
     }
 
-    # prune old checkpoints for this world
-    $worldDir = Join-Path $BackupRoot $worldKey
-    $old = Get-ChildItem $worldDir -Directory | Sort-Object Name -Descending | Select-Object -Skip $KeepPerWorld
-    foreach ($dir in $old) {
-        Write-Log "prune: $($dir.FullName)"
-        Remove-Item $dir.FullName -Recurse -Force -Confirm:$false
+    # Ack as soon as the copy that matters is done - pruning old backups
+    # is just housekeeping and the player shouldn't wait on it to see
+    # "checkpoint saved".
+    $msg = "checkpoint stored ($stamp)"
+    Write-Ack $req.id $true "backup" $msg
+    Write-Log "ok: $msg"
+
+    # prune old checkpoints for this world (best-effort; already acked)
+    try {
+        $worldDir = Join-Path $BackupRoot $worldKey
+        $old = Get-ChildItem $worldDir -Directory | Sort-Object Name -Descending | Select-Object -Skip $KeepPerWorld
+        foreach ($dir in $old) {
+            Write-Log "prune: $($dir.FullName)"
+            Remove-Item $dir.FullName -Recurse -Force -Confirm:$false
+        }
+    } catch {
+        Write-Log "prune failed (checkpoint itself is fine): $($_.Exception.Message)"
     }
 
-    return "checkpoint stored ($stamp)"
+    return $null
 }
 
 # The save may only be swapped while the game isn't holding it. Two
@@ -213,12 +224,17 @@ while ($true) {
 
     try {
         switch ($req.action) {
+            # Invoke-Backup acks internally (before pruning) so the
+            # in-game message isn't delayed by housekeeping; $msg is
+            # $null there and nothing more needs writing on success.
             "backup"  { $msg = Invoke-Backup $req }
             "restore" { $msg = Invoke-Restore $req }
             default   { throw "unknown action '$($req.action)'" }
         }
-        Write-Ack $req.id $true $req.action $msg
-        Write-Log "ok: $msg"
+        if ($msg) {
+            Write-Ack $req.id $true $req.action $msg
+            Write-Log "ok: $msg"
+        }
     } catch {
         $err = $_.Exception.Message
         Write-Ack $req.id $false $req.action $err
