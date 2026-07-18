@@ -1,0 +1,58 @@
+name: Publish to Nexus Mods
+
+# Runs whenever a change lands on main (i.e. after a merge) that touches
+# the mod, watcher, or proxy DLL - not on doc-only changes. Rebuilds the
+# release zip and uploads it as a new file version on the existing Nexus
+# mod page (nexusmods.com/projectzomboid/mods/346).
+#
+# Requires:
+#   - repo secret NEXUSMODS_API_KEY (nexusmods.com/settings/api-keys)
+#   - the NEXUS_FILE_ID value below, from the mod's Files tab -> API Info
+#
+# Nexus's Upload API only adds a new version to an EXISTING file slot -
+# it can't create the initial mod page or file. That first upload has to
+# stay manual; this only handles updates after that.
+#
+# NOTE: bump modversion in mods/DaydreamCheckpoints/42/mod.info before
+# merging - the workflow uploads whatever version is in that file as-is,
+# it does not bump it for you.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mods/**"
+      - "watcher/**"
+      - "proxy/**"
+      - "build/**"
+      - "LICENSE"
+      - "Play PZ (Daydream).bat"
+
+env:
+  NEXUS_FILE_ID: "7625444"   # from Files tab -> ... -> API Info
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read mod version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path "mods\DaydreamCheckpoints\42\mod.info" -Pattern "modversion=(.+)").Matches[0].Groups[1].Value.Trim()
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build release zip
+        shell: pwsh
+        run: powershell -File build\package.ps1
+
+      - name: Upload to Nexus Mods
+        uses: Nexus-Mods/upload-action@v1
+        with:
+          api_key: ${{ secrets.NEXUSMODS_API_KEY }}
+          file_id: ${{ env.NEXUS_FILE_ID }}
+          filename: dist/DaydreamCheckpoints_v${{ steps.version.outputs.version }}.zip
+          version: ${{ steps.version.outputs.version }}
+          category: main
