@@ -39,6 +39,22 @@ local function dbg(msg)
     if DEBUG then print("[DaydreamCheckpoints] " .. msg) end
 end
 
+local function tr(key, fallback, ...)
+    if getTextOrNull then
+        local ok, val = pcall(getTextOrNull, key, ...)
+        if ok and val and val ~= "" then return val end
+    end
+    if getText then
+        local ok, val = pcall(getText, key, ...)
+        if ok and val and val ~= "" and val ~= key then return val end
+    end
+    if select("#", ...) > 0 and fallback then
+        local arg1 = tostring(select(1, ...) or "")
+        return (fallback:gsub("%%1", function() return arg1 end))
+    end
+    return fallback or key
+end
+
 --=====================================================================--
 -- Options (Options -> Mods -> Daydream Checkpoints)
 --=====================================================================--
@@ -50,15 +66,15 @@ if PZAPI and PZAPI.ModOptions and PZAPI.ModOptions.create then
         local opts = PZAPI.ModOptions:create("DaydreamCheckpoints", "Daydream Checkpoints")
         optEnabled = opts:addTickBox(
             "enabled",
-            "Checkpoint when waking from sleep",
+            tr("UI_Daydream_OptEnabled", "Checkpoint when waking from sleep"),
             true,
-            "Waking up saves the game and snapshots the save folder as a checkpoint."
+            tr("UI_Daydream_OptEnabledTooltip", "Waking up saves the game and snapshots the save folder as a checkpoint.")
         )
         optMinDays = opts:addSlider(
             "minDays",
-            "Minimum in-game days between checkpoints",
+            tr("UI_Daydream_OptMinDays", "Minimum in-game days between checkpoints"),
             0, 14, 1, 0,
-            "0 = checkpoint on every sleep."
+            tr("UI_Daydream_OptMinDaysTooltip", "0 = checkpoint on every sleep.")
         )
     end)
 end
@@ -161,13 +177,13 @@ end
 -- Said on waking from sleep, when a checkpoint is taken. Lore-friendly:
 -- the character marking the day in their mind, not "game saved".
 local SLEEP_LINES = {
-    "A new day. I'll remember waking up like this.",
-    "Slept alright. This moment feels worth holding onto.",
-    "Morning. If it all goes wrong, let me come back to here.",
-    "Another dawn survived. I won't forget this one.",
-    "Rested. Whatever happens today, this is where I start over.",
-    "I could get used to waking up in one piece.",
-    "New morning. Let this be the one I remember.",
+    { key = "UI_Daydream_Sleep1", fallback = "A new day. I'll remember waking up like this." },
+    { key = "UI_Daydream_Sleep2", fallback = "Slept alright. This moment feels worth holding onto." },
+    { key = "UI_Daydream_Sleep3", fallback = "Morning. If it all goes wrong, let me come back to here." },
+    { key = "UI_Daydream_Sleep4", fallback = "Another dawn survived. I won't forget this one." },
+    { key = "UI_Daydream_Sleep5", fallback = "Rested. Whatever happens today, this is where I start over." },
+    { key = "UI_Daydream_Sleep6", fallback = "I could get used to waking up in one piece." },
+    { key = "UI_Daydream_Sleep7", fallback = "New morning. Let this be the one I remember." },
 }
 
 -- Nightmare lines keyed by death cause, recounted on waking after a
@@ -175,42 +191,42 @@ local SLEEP_LINES = {
 -- that plays them can see the table.
 local NIGHTMARE = {
     zombie = {
-        "I dreamt they got me. Teeth at my throat, the cold... God. It felt so real.",
-        "A nightmare - dragged down by dead hands, biting, tearing. I can still feel it.",
-        "They swarmed me in the dream. I felt myself go under. Never again.",
+        { key = "UI_Daydream_Nightmare_zombie_1", fallback = "I dreamt they got me. Teeth at my throat, the cold... God. It felt so real." },
+        { key = "UI_Daydream_Nightmare_zombie_2", fallback = "A nightmare - dragged down by dead hands, biting, tearing. I can still feel it." },
+        { key = "UI_Daydream_Nightmare_zombie_3", fallback = "They swarmed me in the dream. I felt myself go under. Never again." },
     },
     bite = {
-        "The dream again: the bite, the fever, feeling myself turn. I woke up screaming inside.",
-        "I dreamt of the wound going bad. Watching my own hands grey over. Just a dream. Just a dream.",
+        { key = "UI_Daydream_Nightmare_bite_1", fallback = "The dream again: the bite, the fever, feeling myself turn. I woke up screaming inside." },
+        { key = "UI_Daydream_Nightmare_bite_2", fallback = "I dreamt of the wound going bad. Watching my own hands grey over. Just a dream. Just a dream." },
     },
     infection = {
-        "Fever dreams. I felt the sickness take me, felt myself slip away. It was so vivid.",
-        "In the nightmare the infection won. I remember dying slow. I won't let that happen.",
+        { key = "UI_Daydream_Nightmare_infection_1", fallback = "Fever dreams. I felt the sickness take me, felt myself slip away. It was so vivid." },
+        { key = "UI_Daydream_Nightmare_infection_2", fallback = "In the nightmare the infection won. I remember dying slow. I won't let that happen." },
     },
     fire = {
-        "I dreamt of burning. The heat, the smoke, no way out. I can still smell it.",
-        "Fire in the dream - I felt it eat through me. I jolted awake half expecting flames.",
+        { key = "UI_Daydream_Nightmare_fire_1", fallback = "I dreamt of burning. The heat, the smoke, no way out. I can still smell it." },
+        { key = "UI_Daydream_Nightmare_fire_2", fallback = "Fire in the dream - I felt it eat through me. I jolted awake half expecting flames." },
     },
     cold = {
-        "I dreamt of freezing to death, the cold creeping in until I couldn't move. Horrible.",
-        "The nightmare was all ice - shivering, then nothing. I need to stay warm.",
+        { key = "UI_Daydream_Nightmare_cold_1", fallback = "I dreamt of freezing to death, the cold creeping in until I couldn't move. Horrible." },
+        { key = "UI_Daydream_Nightmare_cold_2", fallback = "The nightmare was all ice - shivering, then nothing. I need to stay warm." },
     },
     hunger = {
-        "I dreamt of starving, of my body just giving out. I have to eat.",
-        "Hollow, wasting away in the dream until the dark took me. I won't ignore my stomach again.",
+        { key = "UI_Daydream_Nightmare_hunger_1", fallback = "I dreamt of starving, of my body just giving out. I have to eat." },
+        { key = "UI_Daydream_Nightmare_hunger_2", fallback = "Hollow, wasting away in the dream until the dark took me. I won't ignore my stomach again." },
     },
     thirst = {
-        "I dreamt my throat closed up, dying of thirst in the heat. I need water.",
-        "The nightmare was all dust and dry lungs. I can't neglect water like that.",
+        { key = "UI_Daydream_Nightmare_thirst_1", fallback = "I dreamt my throat closed up, dying of thirst in the heat. I need water." },
+        { key = "UI_Daydream_Nightmare_thirst_2", fallback = "The nightmare was all dust and dry lungs. I can't neglect water like that." },
     },
     wound = {
-        "I dreamt I bled out, the world going soft and far away. I felt it happen.",
-        "A dream of a wound that wouldn't close, of fading. It shook me awake.",
+        { key = "UI_Daydream_Nightmare_wound_1", fallback = "I dreamt I bled out, the world going soft and far away. I felt it happen." },
+        { key = "UI_Daydream_Nightmare_wound_2", fallback = "A dream of a wound that wouldn't close, of fading. It shook me awake." },
     },
     unknown = {
-        "I had the worst nightmare - I dreamt I died out here. It felt real enough to taste.",
-        "A terrible dream. I remember dying. I woke up glad to be breathing.",
-        "I dreamt this was all over, that I didn't make it. Never want to feel that again.",
+        { key = "UI_Daydream_Nightmare_unknown_1", fallback = "I had the worst nightmare - I dreamt I died out here. It felt real enough to taste." },
+        { key = "UI_Daydream_Nightmare_unknown_2", fallback = "A terrible dream. I remember dying. I woke up glad to be breathing." },
+        { key = "UI_Daydream_Nightmare_unknown_3", fallback = "I dreamt this was all over, that I didn't make it. Never want to feel that again." },
     },
 }
 
@@ -251,9 +267,10 @@ local function checkAck()
         local message = jsonField(raw, "message") or ""
         dbg("ack received: ok=" .. tostring(ok) .. " message=" .. message)
         if ok then
-            say(pickRandom(SLEEP_LINES))
+            local line = pickRandom(SLEEP_LINES)
+            say(tr(line.key, line.fallback))
         else
-            notify("Checkpoint failed: " .. message)
+            notify(tr("UI_Daydream_CheckpointFailed", "Checkpoint failed: %1", message))
         end
         pendingAck = nil
         return
@@ -261,7 +278,7 @@ local function checkAck()
 
     if getTimestampMs() > pendingAck.deadlineAtMs then
         dbg("ack timeout - watcher not running?")
-        notify("Checkpoint watcher isn't responding - is it running?")
+        notify(tr("UI_Daydream_WatcherTimeout", "Checkpoint watcher isn't responding - is it running?"))
         pendingAck = nil
     end
 end
@@ -301,7 +318,7 @@ local function doCheckpoint()
     local saved = pcall(saveGame)
     if not saved then
         store.lastCheckpointDay, store.hasCheckpoint = prevLastDay, prevHas
-        notify("Checkpoint failed: game save errored.")
+        notify(tr("UI_Daydream_SaveErrored", "Checkpoint failed: game save errored."))
         return
     end
 
@@ -354,7 +371,8 @@ local function onTick()
     if nightmareDueAtMs and getTimestampMs() >= nightmareDueAtMs then
         nightmareDueAtMs = nil
         local pool = NIGHTMARE[nightmarePendingCause] or NIGHTMARE.unknown
-        say(pickRandom(pool))
+        local line = pickRandom(pool)
+        say(tr(line.key, line.fallback))
     end
 end
 
@@ -456,7 +474,7 @@ Events.OnPlayerDeath.Add(onPlayerDeath)
 -- arrives, a dialog tells the player to load the save again.
 --=====================================================================--
 
-local WAKE_LABEL = "Wake up at last checkpoint"
+local WAKE_LABEL = tr("UI_Daydream_WakeButton", "Wake up at last checkpoint")
 local pendingRestoreId = nil
 local restoreDeadlineAtMs = nil
 local restoreStarted = false
@@ -515,7 +533,7 @@ local function startRestoreFlow(deathPanel)
 
     local id = writeRequest("restore", "latest")
     if not id then
-        notify("Could not write the restore request.")
+        notify(tr("UI_Daydream_RestoreWriteFailed", "Could not write the restore request."))
         restoreStarted = false
         return
     end
@@ -620,7 +638,7 @@ local function attemptAutoLoad()
     clearPendingRestore()
     if not ok then
         dbg("auto-load failed: " .. tostring(err))
-        showMenuDialog("Checkpoint restored.\nClick Continue to wake up at the checkpoint.")
+        showMenuDialog(tr("UI_Daydream_RestoredDialog", "Checkpoint restored.\nClick Continue to wake up at the checkpoint."))
     else
         dbg("auto-load call completed without error")
     end
@@ -639,7 +657,7 @@ local function checkRestoreAck()
             autoLoadRetryDeadlineMs = getTimestampMs() + 15000
         else
             clearPendingRestore()
-            showMenuDialog("Checkpoint restore FAILED:\n" .. message .. "\nYour save was not touched.")
+            showMenuDialog(tr("UI_Daydream_RestoreFailedDialog", "Checkpoint restore FAILED:\n%1\nYour save was not touched.", message))
         end
         return
     end
@@ -648,7 +666,7 @@ local function checkRestoreAck()
         pendingRestoreId = nil
         restoreStarted = false
         clearPendingRestore()
-        showMenuDialog("Checkpoint restore timed out - is the watcher running?\nYour save may not have been restored.")
+        showMenuDialog(tr("UI_Daydream_RestoreTimeoutDialog", "Checkpoint restore timed out - is the watcher running?\nYour save may not have been restored."))
     end
 end
 
@@ -672,7 +690,7 @@ local function onFETick()
             dbg("auto-load: gave up waiting for MainScreen.instance")
             autoLoadRetryDeadlineMs = nil
             clearPendingRestore()
-            showMenuDialog("Checkpoint restored.\nClick Continue to wake up at the checkpoint.")
+            showMenuDialog(tr("UI_Daydream_RestoredDialog", "Checkpoint restored.\nClick Continue to wake up at the checkpoint."))
         end
     end
 end
